@@ -20,6 +20,7 @@ It plugs into zephyr.nvim's registries instead of wrapping it, so build, flash, 
   dependencies = { "joepboumans/zephyr.nvim" },
   opts = {
     -- install_dir = "~/ncs", -- passed to nrfutil as --install-dir; nrfutil's default when unset
+    -- watch_manifest = true, -- report NCS version changes when the Manifest is saved
   },
 }
 ```
@@ -32,6 +33,7 @@ Run `:checkhealth nrf` to check the setup.
 
 | Command | What it does |
 |---|---|
+| `:Nrf ncs` | Show the Workspace's NCS version (official release or custom revision) and the Active toolchain; offers to activate the installed NCS toolchain matching an official version |
 | `:Nrf toolchain list` | List installed NCS toolchains (asks `nrfutil` again); `*` marks the Workspace's Active toolchain |
 | `:Nrf toolchain select` | Pick an NCS toolchain and make it the Active toolchain of the current Workspace. Any installed toolchain works for any Workspace, so a customised NCS fork can use whichever toolchain it needs |
 | `:Nrf toolchain install <version>` | Install the NCS toolchain for an NCS version, e.g. `v3.0.2`, in the background |
@@ -39,6 +41,9 @@ Run `:checkhealth nrf` to check the setup.
 | Event | `ev.data` |
 |---|---|
 | `NrfToolchainInstalled` | `{ provider = "ncs", version, path }` |
+| `NrfNcsVersionChanged` | `{ workspace, old, new, official }`, when a saved Manifest pins a different NCS version than when it was opened |
+
+The NCS version (`require("nrf.ncs")`) is the `nrf` project's revision in the Manifest (`west list nrf`). When nrf is the manifest repo itself, it is the checkout's `git describe --tags`, or `nrf/VERSION` when no tag is reachable (always reported as custom). Tags like `v3.0.2`, `v3.1.0-rc1` and `v3.0.0-preview2` count as official; fork branches, SHAs and commits past a tag are custom revisions. `version(workspace, cb)` and `suggest_toolchain(workspace, cb)` run in the background. On a version change nrf-connect.nvim only notifies and suggests a toolchain; it never switches one by itself.
 
 The `ncs` Toolchain provider (`require("nrf.toolchain")`) uses `nrfutil sdk-manager toolchain` when present, else `nrfutil toolchain-manager`. zephyr.nvim calls `find()` and `env()` synchronously, so each nrfutil call is bounded by `require("nrf.toolchain").timeout_ms` (15 s) and the results are cached: the toolchain list until `:Nrf toolchain list`, an install or `refresh()`, and the environment per toolchain for the session. The environment comes from `env --as-script sh` and does not set `ZEPHYR_BASE`; west finds Zephyr from the Workspace.
 
