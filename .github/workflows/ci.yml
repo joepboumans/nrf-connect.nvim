@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        nvim: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      # zephyr.nvim is private for now, so checking it out needs a token with read access to it.
+      - uses: actions/checkout@v4
+        with:
+          repository: joepboumans/zephyr.nvim
+          path: deps/zephyr.nvim
+          token: ${{ secrets.ZEPHYR_NVIM_TOKEN }}
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+      - run: make test ZEPHYR_DIR=deps/zephyr.nvim
