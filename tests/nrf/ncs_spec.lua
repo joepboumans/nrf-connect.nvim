@@ -218,17 +218,24 @@ describe("nrf.ncs", function()
 			assert.are.same({}, notes)
 		end)
 
+		-- zephyr.nvim's own autocmds (e.g. drift) may run west too; only nrf's `west list nrf` counts.
+		local function nrf_calls()
+			return vim.tbl_filter(function(c)
+				return c.cmd == WEST
+			end, calls)
+		end
+
 		it("ignores yml files that are not the Manifest", function()
 			vim.cmd("edit " .. tmp .. "/app/other.yml")
 			vim.cmd("silent write")
-			assert.are.same({}, calls)
+			assert.are.same({}, nrf_calls())
 		end)
 
 		it("can be disabled with watch_manifest = false", function()
 			require("nrf").setup({ watch_manifest = false })
 			pins("v3.0.2")
 			vim.cmd("edit " .. manifest)
-			assert.are.same({}, calls)
+			assert.are.same({}, nrf_calls())
 		end)
 	end)
 end)

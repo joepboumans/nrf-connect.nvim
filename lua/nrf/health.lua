@@ -9,7 +9,7 @@ function M.check()
 		return
 	end
 	if vim.fn.executable("nrfutil") == 1 then
-		local res = vim.system({ "nrfutil", "--version" }, { text = true }):wait(5000)
+		local res = require("nrf.toolchain").run_sync({ "nrfutil", "--version" }, 5000)
 		vim.health.ok(("`nrfutil` found (%s)"):format(vim.trim((res.stdout or ""):match("[^\n]*") or "")))
 	else
 		vim.health.warn("`nrfutil` not found on PATH; NCS toolchains and Nordic probes are unavailable")
@@ -26,7 +26,7 @@ function M.check()
 		)
 		return
 	end
-	vim.health.ok(("Using `%s`"):format(table.concat(command.argv, " ")))
+	vim.health.ok(("Using `%s` (%s)"):format(table.concat(command.argv, " "), command.version))
 	local found = toolchain.find()
 	if #found == 0 then
 		vim.health.warn("No NCS toolchains installed", "Run `:Nrf toolchain install <version>`")

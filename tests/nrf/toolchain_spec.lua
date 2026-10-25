@@ -63,6 +63,26 @@ describe("NCS toolchain provider", function()
 			assert.are.equal("toolchain-manager", toolchain.command().name)
 		end)
 
+		it("records the manager's version for :checkhealth", function()
+			has_toolchain_manager()
+			assert.are.equal("nrfutil-toolchain-manager 0.15.0", toolchain.command().version)
+		end)
+
+		it(":checkhealth nrf reports the manager version", function()
+			has_sdk_manager()
+			local oks = {}
+			local real_ok = vim.health.ok
+			vim.health.ok = function(msg)
+				table.insert(oks, msg)
+			end
+			local ok, err = pcall(require("nrf.health").check)
+			vim.health.ok = real_ok
+			assert.is_true(ok, err)
+			assert.is_truthy(vim.iter(oks):find(function(m)
+				return m:find("nrfutil-sdk-manager 1.4.0", 1, true) ~= nil
+			end))
+		end)
+
 		it("is nil without nrfutil and does not run it", function()
 			vim.fn.executable = function()
 				return 0
