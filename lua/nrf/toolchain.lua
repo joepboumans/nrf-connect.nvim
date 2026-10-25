@@ -23,6 +23,7 @@ M.timeout_ms = 15000
 ---@class nrf.NrfutilCommand
 ---@field name "sdk-manager"|"toolchain-manager"
 ---@field argv string[] prefix for toolchain subcommands, e.g. { "nrfutil", "sdk-manager", "toolchain" }
+---@field version string first line of its `--version` output, e.g. "nrfutil-sdk-manager 1.4.0"
 
 local cache = {}
 
@@ -41,20 +42,32 @@ local function install_dir()
 	return ok and nrf.config and nrf.config.install_dir or nil
 end
 
----Run `cmd` and wait for it, at most `M.timeout_ms`.
+---Run `cmd` through zephyr.process and wait for it, at most `timeout_ms` (default `M.timeout_ms`).
+---Blocks; only for callers that must answer synchronously (registry find/env, :checkhealth).
+---@param cmd string[]
+---@param timeout_ms? integer
 ---@return vim.SystemCompleted
-local function run_sync(cmd)
+function M.run_sync(cmd, timeout_ms)
+	timeout_ms = timeout_ms or M.timeout_ms
 	local result
-	process.run(cmd, { timeout = M.timeout_ms }, function(res)
+	process.run(cmd, { timeout = timeout_ms }, function(res)
 		result = res
 	end)
-	local done = vim.wait(M.timeout_ms + 100, function()
+	local done = vim.wait(timeout_ms + 100, function()
 		return result ~= nil
 	end, 10)
 	if not done then
-		return { code = -1, signal = 0, stdout = "", stderr = "timed out after " .. M.timeout_ms .. " ms" }
+		return { code = -1, signal = 0, stdout = "", stderr = "timed out after " .. timeout_ms .. " ms" }
 	end
 	return result
+end
+
+local function run_sync(cmd)
+	return M.run_sync(cmd)
+end
+
+local function first_line(res)
+	return vim.trim((res.stdout or ""):match("[^\n]*") or "")
 end
 
 ---Decode nrfutil's NDJSON output (one `{ type, data }` object per line), skipping lines that are not JSON.
@@ -79,10 +92,16 @@ function M.command()
 	end
 	cache.command = false
 	if vim.fn.executable("nrfutil") == 1 then
-		if run_sync({ "nrfutil", "sdk-manager", "--version" }).code == 0 then
-			cache.command = { name = "sdk-manager", argv = { "nrfutil", "sdk-manager", "toolchain" } }
-		elseif run_sync({ "nrfutil", "toolchain-manager", "--version" }).code == 0 then
-			cache.command = { name = "toolchain-manager", argv = { "nrfutil", "toolchain-manager" } }
+		local sdk = run_sync({ "nrfutil", "sdk-manager", "--version" })
+		if sdk.code == 0 then
+			cache.command =
+				{ name = "sdk-manager", argv = { "nrfutil", "sdk-manager", "toolchain" }, version = first_line(sdk) }
+		else
+			local tm = run_sync({ "nrfutil", "toolchain-manager", "--version" })
+			if tm.code == 0 then
+				cache.command =
+					{ name = "toolchain-manager", argv = { "nrfutil", "toolchain-manager" }, version = first_line(tm) }
+			end
 		end
 	end
 	return cache.command or nil

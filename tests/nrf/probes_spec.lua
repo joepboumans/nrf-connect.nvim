@@ -79,4 +79,22 @@ describe("nrf.probes", function()
 		vim.env.PATH = path
 		assert.is_nil(res)
 	end)
+
+	it("default runner starts nrfutil through zephyr.process.run with the timeout", function()
+		local process = require("zephyr.process")
+		local real_run, real_exe = process.run, vim.fn.executable
+		local seen
+		process.run = function(cmd, opts, on_exit)
+			seen = { cmd = cmd, timeout = opts.timeout }
+			on_exit({ code = 0, signal = 0, stdout = read("device_list_info.ndjson"), stderr = "" })
+		end
+		vim.fn.executable = function()
+			return 1
+		end
+		local ok, found = pcall(probes.finder.find)
+		process.run, vim.fn.executable = real_run, real_exe
+		assert.is_true(ok, found)
+		assert.are.same({ cmd = { "nrfutil", "device", "list", "--json" }, timeout = probes.timeout_ms }, seen)
+		assert.are.equal(1, #found)
+	end)
 end)

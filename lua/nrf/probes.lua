@@ -17,20 +17,15 @@ local devkits = {
 	PCA10175 = "nRF54H20 DK",
 }
 
----Run a command and wait for it. The registry's find() is synchronous, so this is the one place that
----blocks on vim.system instead of using zephyr.process.run. Tests replace it.
+---Run a command through zephyr.process and wait for it: the registry's find() is synchronous. Tests replace it.
 ---@param cmd string[]
 ---@param timeout integer milliseconds
----@return vim.SystemCompleted|nil res nil when the command cannot be started (e.g. not installed)
+---@return vim.SystemCompleted|nil res nil when the command is not installed
 function M._run(cmd, timeout)
 	if vim.fn.executable(cmd[1]) ~= 1 then
 		return nil
 	end
-	local ok, proc = pcall(vim.system, cmd, { text = true })
-	if not ok then
-		return nil
-	end
-	return proc:wait(timeout)
+	return require("nrf.toolchain").run_sync(cmd, timeout)
 end
 
 ---Device objects from nrfutil's NDJSON: `task_end` carries them at data.data.devices,
