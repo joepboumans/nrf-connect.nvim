@@ -1,0 +1,2 @@
+{"type":"task_begin","data":{"task":{"id":"1","name":"list","description":"List devices","data":null}}}
+{"type":"task_end","data":{"task":{"id":"1","name":"list","description":"List devices","data":null},"result":"success","data":{"devices":[]}}}
