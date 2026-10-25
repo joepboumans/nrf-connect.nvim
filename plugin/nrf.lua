@@ -7,6 +7,12 @@ local subcommands = { "ncs", "toolchain" }
 
 -- Implemented subcommands: handler and the words that can follow it.
 local handlers = {
+	ncs = {
+		run = function(args)
+			require("nrf.ui.ncs").run(args)
+		end,
+		actions = {},
+	},
 	toolchain = {
 		run = function(args)
 			require("nrf.ui.toolchain").run(args)
