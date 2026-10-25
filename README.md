@@ -52,3 +52,5 @@ The `nrfutil` probe finder (`require("nrf.probes")`) lists connected J-Link Prob
 ## Development
 
 `make test` expects zephyr.nvim next to this repo (`../zephyr.nvim`, override with `ZEPHYR_DIR=`). Vocabulary lives in [CONTEXT.md](CONTEXT.md).
+
+There is no CI on purpose, because hosted CI costs money. Run `make test` locally before you open or merge a PR, and don't add GitHub Actions workflows.
