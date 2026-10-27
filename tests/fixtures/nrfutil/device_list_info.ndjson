@@ -1,0 +1,2 @@
+{"type":"log","data":{"level":"INFO","message":"Enumerating devices"}}
+{"type":"info","data":{"devices":[{"id":1,"serialNumber":"001051234567","traits":{"jlink":true,"seggerUsb":true,"usb":true,"serialPorts":true,"devkit":true},"devkit":{"boardVersion":"PCA10095","deviceFamily":"NRF53_FAMILY"}}]}}

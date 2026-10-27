@@ -1,7 +1,9 @@
 local M = {}
 
 ---@class nrf.Config
-M.config = {}
+---@field install_dir? string passed to nrfutil as --install-dir
+---@field watch_manifest? boolean when a Manifest is saved, report NCS version changes (default true)
+M.config = { watch_manifest = true }
 
 ---@param opts? nrf.Config
 function M.setup(opts)
@@ -13,6 +15,7 @@ function M.setup(opts)
 	end
 	zephyr.registry.register("toolchain_provider", require("nrf.toolchain").provider)
 	zephyr.registry.register("probe_finder", require("nrf.probes").finder)
+	require("nrf.ncs").watch(M.config.watch_manifest ~= false)
 end
 
 ---Fire a `User` autocmd named `Nrf<Event>` with details in `ev.data`.

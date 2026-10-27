@@ -40,5 +40,5 @@ luac.out
 *.hex
 
 
-# Test dependencies checked out by CI
+# Local test dependencies
 deps/
