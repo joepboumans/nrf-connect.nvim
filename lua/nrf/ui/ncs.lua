@@ -8,7 +8,8 @@ local function notify(msg, level)
 end
 
 ---Show the current Workspace's NCS version, whether it is official, and the Active
----toolchain; offer to activate the matching NCS toolchain when it is not active.
+---toolchain of the active Build configuration; offer to make the matching NCS
+---toolchain its Toolchain when it is not.
 function M.show()
 	local ws = require("zephyr.workspace").find()
 	if not ws then
@@ -19,7 +20,8 @@ function M.show()
 			return notify("cannot find the NCS version: " .. (err or "unknown error"), vim.log.levels.ERROR)
 		end
 		local zt = require("zephyr.toolchain")
-		local active = zt.active(ws)
+		local _, app, cfg = require("nrf.ui.target").find()
+		local active = zt.active(app or ws)
 		local lines = {
 			("NCS version: %s (%s, from %s)"):format(
 				info.version,
@@ -35,12 +37,12 @@ function M.show()
 			table.insert(lines, "Custom revision: pick a toolchain with :Nrf toolchain select")
 		end
 		notify(table.concat(lines, "\n"))
-		if suggested and not (active and active.id == suggested.id) then
+		if suggested and cfg and not (active and active.id == suggested.id) then
 			local yes = "Activate " .. suggested.name
 			vim.ui.select({ yes, "Keep the active toolchain" }, { prompt = "Matching NCS toolchain" }, function(choice)
 				if choice == yes then
-					zt.activate(ws, suggested)
-					notify("active toolchain: " .. suggested.name)
+					zt.activate(app, cfg, suggested)
+					notify(("toolchain of %s: %s"):format(cfg.name, suggested.name))
 				end
 			end)
 		end

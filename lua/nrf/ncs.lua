@@ -123,6 +123,50 @@ function M.version(workspace, cb)
 	end)
 end
 
+---The nrf checkout of `workspace`, found from the Manifest file without running
+---west: the project named `nrf` (or `sdk-nrf`), else the manifest repository
+---itself when it holds a VERSION file (the `west init -m sdk-nrf` layout).
+---@param workspace zephyr.Workspace
+---@return string|nil dir, zephyr.ManifestProject|nil project nil when nrf is the manifest repository
+function M.nrf_dir(workspace)
+	local zm = require("zephyr.manifest")
+	local m = zm.of(workspace)
+	if m then
+		for _, name in ipairs({ "nrf", "sdk-nrf" }) do
+			local p = zm.project(m, name)
+			if p then
+				return zm.project_dir(workspace, p), p
+			end
+		end
+	end
+	if workspace.manifest_dir and vim.uv.fs_stat(workspace.manifest_dir .. "/VERSION") then
+		return workspace.manifest_dir, nil
+	end
+	return nil
+end
+
+---The first version-looking part of a revision: "vt-v2.9.2-v1.5" gives "v2.9.2".
+---@param revision string|nil
+---@return string|nil
+function M.version_in(revision)
+	local v = revision and revision:match("(%d+%.%d+%.%d+)")
+	return v and ("v" .. v) or nil
+end
+
+---The NCS release a Workspace's checkout is, without running west or git:
+---`<nrf>/VERSION` (a fork may pin a branch or SHA), else the version-looking
+---part of the nrf revision in the Manifest.
+---@param workspace zephyr.Workspace
+---@return string|nil e.g. "v2.9.2"
+function M.workspace_version(workspace)
+	local dir, project = M.nrf_dir(workspace)
+	local from_file = dir and M.parse_version_file(read(vim.fs.joinpath(dir, "VERSION")) or "")
+	if from_file then
+		return from_file:match("^v%d+%.%d+%.%d+")
+	end
+	return project and M.version_in(project.revision) or nil
+end
+
 ---The installed NCS toolchain for an NCS version, if any.
 ---@param version string
 ---@return nrf.NcsToolchain|nil

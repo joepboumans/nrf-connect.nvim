@@ -15,11 +15,11 @@ end
 
 local none = "no NCS toolchains found; try :Nrf toolchain install <version>"
 
----List installed NCS toolchains, marking the Workspace's Active toolchain. Asks nrfutil again.
+---List installed NCS toolchains, marking the active Build configuration's Toolchain. Asks nrfutil again.
 function M.list()
 	ncs.refresh()
-	local ws = require("zephyr.workspace").find()
-	local active = ws and require("zephyr.toolchain").active(ws)
+	local subject = require("nrf.ui.target").subject()
+	local active = subject and require("zephyr.toolchain").active(subject)
 	local lines = {}
 	for _, tc in ipairs(ncs.find()) do
 		local mark = active and tc.id == active.id and "* " or "  "
@@ -28,21 +28,25 @@ function M.list()
 	notify(#lines > 0 and ("NCS toolchains:\n" .. table.concat(lines, "\n")) or none)
 end
 
----Pick an NCS toolchain and make it the Active toolchain of the current Workspace.
----Any installed toolchain can be picked, whatever NCS version the Workspace pins.
+---Pick an NCS toolchain for the active Build configuration (of the current App,
+---else of the Workspace's Active app). Any installed toolchain can be picked,
+---whatever NCS version the Workspace pins.
 function M.select()
-	local ws = require("zephyr.workspace").find()
-	if not ws then
+	local ws, app, cfg = require("nrf.ui.target").find()
+	if not ws and not app then
 		return notify("not inside a west workspace", vim.log.levels.ERROR)
+	end
+	if not cfg then
+		return notify("no build configuration yet; try :Zephyr build new", vim.log.levels.WARN)
 	end
 	local all = ncs.find()
 	if #all == 0 then
 		return notify(none, vim.log.levels.WARN)
 	end
-	vim.ui.select(all, { prompt = "NCS toolchain for " .. ws.topdir, format_item = label }, function(choice)
+	vim.ui.select(all, { prompt = "NCS toolchain for " .. cfg.name, format_item = label }, function(choice)
 		if choice then
-			require("zephyr.toolchain").activate(ws, choice)
-			notify("active toolchain: " .. choice.name)
+			require("zephyr.toolchain").activate(app, cfg, choice)
+			notify(("toolchain of %s: %s"):format(cfg.name, choice.name))
 		end
 	end)
 end

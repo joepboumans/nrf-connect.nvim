@@ -267,7 +267,7 @@ describe("NCS toolchain provider", function()
 		end)
 	end)
 
-	it("is registered with zephyr.nvim and activates for any Workspace", function()
+	it("is registered with zephyr.nvim and activates for a Build configuration", function()
 		local registry = require("zephyr.registry")
 		local state = require("zephyr.state")
 		local saved = state.path
@@ -280,12 +280,16 @@ describe("NCS toolchain provider", function()
 		responses["nrfutil sdk-manager toolchain env --as-script sh --toolchain-bundle-id 7cbc0036f4"] =
 			{ code = 0, stdout = "export FORK=1\n" }
 		local zt = require("zephyr.toolchain")
-		local ws = { topdir = "/ws/fork" }
+		local dir = vim.fn.tempname() .. "/app"
+		vim.fn.mkdir(dir, "p")
+		vim.fn.writefile({ "find_package(Zephyr)" }, dir .. "/CMakeLists.txt")
+		local app = require("zephyr.app").from_dir(dir)
+		local cfg = require("zephyr.build_config").new(app, { board = "nrf52840dk/nrf52840" })
 		local fork_tc = vim.tbl_filter(function(t)
 			return t.bundle_id == "7cbc0036f4"
 		end, zt.list())[1]
-		zt.activate(ws, fork_tc)
-		local env = zt.env(ws)
+		zt.activate(app, cfg, fork_tc)
+		local env = zt.env(app, require("zephyr.build_config").active(app))
 		state.path = saved
 		assert.are.same({ FORK = "1" }, env)
 	end)

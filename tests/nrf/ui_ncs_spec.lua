@@ -14,6 +14,10 @@ describe(":Nrf ncs", function()
 		local zt = require("zephyr.toolchain")
 		saved.suggest, saved.notify, saved.select = ncs.suggest_toolchain, vim.notify, vim.ui.select
 		saved.ws_find, saved.active, saved.activate = require("zephyr.workspace").find, zt.active, zt.activate
+		saved.target = require("nrf.ui.target").find
+		require("nrf.ui.target").find = function()
+			return { topdir = "/ws" }, { dir = "/ws/app" }, { dir = "/ws/app/build", name = "build" }
+		end
 		ncs.suggest_toolchain = function(_, cb)
 			cb(suggestion[1], suggestion[2])
 		end
@@ -30,8 +34,8 @@ describe(":Nrf ncs", function()
 		zt.active = function()
 			return active
 		end
-		zt.activate = function(_, tc)
-			activated = tc.id
+		zt.activate = function(_, cfg, tc)
+			activated = cfg.dir == "/ws/app/build" and tc.id or nil
 		end
 	end)
 
@@ -39,6 +43,7 @@ describe(":Nrf ncs", function()
 		local zt = require("zephyr.toolchain")
 		ncs.suggest_toolchain, vim.notify, vim.ui.select = saved.suggest, saved.notify, saved.select
 		require("zephyr.workspace").find, zt.active, zt.activate = saved.ws_find, saved.active, saved.activate
+		require("nrf.ui.target").find = saved.target
 	end)
 
 	it("shows the version and offers the matching toolchain", function()
