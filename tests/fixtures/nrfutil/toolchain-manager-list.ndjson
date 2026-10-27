@@ -1,0 +1,2 @@
+{"type":"log","data":{"level":"INFO","message":"Listing installed toolchains"}}
+{"type":"info","data":{"toolchains":[{"path":"/home/u/ncs/toolchains/b8b84efebd","ncs_version":"v2.6.1"},{"path":"/home/u/ncs/toolchains/2be090971e","ncs_version":"v2.9.0"}]}}

@@ -1,0 +1,13 @@
+describe("nrf.setup", function()
+	it("registers the NCS toolchain provider and Nordic probe finder with zephyr.nvim", function()
+		local registry = require("zephyr.registry")
+		registry._reset()
+		require("nrf").setup()
+		assert.is_not_nil(registry.get("toolchain_provider", "ncs"))
+		assert.is_not_nil(registry.get("probe_finder", "nrfutil"))
+	end)
+
+	it("defines :Nrf", function()
+		assert.are.equal(2, vim.fn.exists(":Nrf"))
+	end)
+end)
