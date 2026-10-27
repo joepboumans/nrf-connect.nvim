@@ -1,0 +1,3 @@
+{"type":"task_begin","data":{"task":{"id":"1","description":"Installing toolchain","name":"install_toolchain","data":null}}}
+{"type":"task_progress","data":{"task":{"id":"1","description":"Installing toolchain","name":"install_toolchain","data":null},"progress":{"progressPercentage":50,"description":"Downloading","message":"Downloading"}}}
+{"type":"task_end","data":{"task":{"id":"1","description":"Installing toolchain","name":"install_toolchain","data":{"install_path":"/home/u/ncs/toolchains/b8b84efebd"}},"result":"success","message":"Installed toolchain"}}
