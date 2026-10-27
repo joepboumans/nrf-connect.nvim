@@ -288,10 +288,36 @@ function M.install(opts, on_done)
 	end)
 end
 
+local function plain(version)
+	return version and (version:gsub("^v", "")) or nil
+end
+
+---Rank NCS toolchains for `workspace`: the one matching the Workspace's NCS
+---version (`<nrf>/VERSION`, else the Manifest's nrf revision) first, then the
+---rest newest first. zephyr.nvim uses the first as the default Toolchain.
+---@param toolchains nrf.NcsToolchain[] newest first, as find() gives them
+---@param workspace zephyr.Workspace
+---@return nrf.NcsToolchain[]
+function M.rank(toolchains, workspace)
+	local ok, want = pcall(require("nrf.ncs").workspace_version, workspace)
+	want = ok and plain(want) or nil
+	if not want then
+		return toolchains
+	end
+	local first, rest = {}, {}
+	for _, tc in ipairs(toolchains) do
+		table.insert(plain(tc.ncs_version) == want and first or rest, tc)
+	end
+	return vim.list_extend(first, rest)
+end
+
 M.provider = {
 	name = M.provider_name,
 	find = function()
 		return M.find()
+	end,
+	rank = function(toolchains, workspace)
+		return M.rank(toolchains, workspace)
 	end,
 	env = function(toolchain)
 		return M.env(toolchain)

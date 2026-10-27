@@ -15,6 +15,10 @@ describe(":Nrf toolchain", function()
 		saved.find, saved.refresh, saved.install = ncs.find, ncs.refresh, ncs.install
 		saved.notify, saved.select = vim.notify, vim.ui.select
 		saved.ws_find = require("zephyr.workspace").find
+		saved.target = require("nrf.ui.target").find
+		require("nrf.ui.target").find = function()
+			return { topdir = "/ws" }, { dir = "/ws/app" }, { dir = "/ws/app/build", name = "build" }
+		end
 		saved.activate, saved.active = require("zephyr.toolchain").activate, require("zephyr.toolchain").active
 		ncs.find = function()
 			return tcs
@@ -26,8 +30,8 @@ describe(":Nrf toolchain", function()
 		require("zephyr.workspace").find = function()
 			return { topdir = "/ws" }
 		end
-		require("zephyr.toolchain").activate = function(ws, tc)
-			activated = { ws = ws.topdir, id = tc.id }
+		require("zephyr.toolchain").activate = function(app, cfg, tc)
+			activated = { app = app.dir, build_dir = cfg.dir, id = tc.id }
 		end
 		require("zephyr.toolchain").active = function()
 			return tcs[2], true
@@ -38,6 +42,7 @@ describe(":Nrf toolchain", function()
 		ncs.find, ncs.refresh, ncs.install = saved.find, saved.refresh, saved.install
 		vim.notify, vim.ui.select = saved.notify, saved.select
 		require("zephyr.workspace").find = saved.ws_find
+		require("nrf.ui.target").find = saved.target
 		require("zephyr.toolchain").activate, require("zephyr.toolchain").active = saved.activate, saved.active
 	end)
 
@@ -47,12 +52,21 @@ describe(":Nrf toolchain", function()
 		assert.is_truthy(notes[1].msg:find("\n* NCS toolchain b", 1, true))
 	end)
 
-	it("selects a toolchain through zephyr.toolchain.activate", function()
+	it("selects a toolchain for the active Build configuration through zephyr.toolchain.activate", function()
 		vim.ui.select = function(items, _, on_choice)
 			on_choice(items[2])
 		end
 		vim.cmd("Nrf toolchain select")
-		assert.are.same({ ws = "/ws", id = "ncs-fork@/t/b" }, activated)
+		assert.are.same({ app = "/ws/app", build_dir = "/ws/app/build", id = "ncs-fork@/t/b" }, activated)
+	end)
+
+	it("needs a Build configuration to select for", function()
+		require("nrf.ui.target").find = function()
+			return { topdir = "/ws" }, { dir = "/ws/app" }, nil
+		end
+		vim.cmd("Nrf toolchain select")
+		assert.is_nil(activated)
+		assert.matches(":Zephyr build new", notes[1].msg)
 	end)
 
 	it("installs a version", function()
